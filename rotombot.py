@@ -51,7 +51,13 @@ async def on_message(message):
 		page = requests.get(message.content)
 		soup = bs4.BeautifulSoup(page.content, 'html.parser')
 		await replayWinner(soup, message)
-
+	elif message.content.startswith('$server'):
+		page = requests.get('INSERT LINK HERE')
+		if page.status_code == 200
+			await message.channel.send('Server is online!')
+			await message.channel.send('INSERT LINK HERE')
+		else:
+			await message.channel.send('Server is not online')
 		
 		
 client.run('INSERT DISCORD BOT KEY HERE')
