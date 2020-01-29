@@ -30,6 +30,19 @@ async def replayWinner(soup, message): #returns the winner of a pokemon showdown
 	else: #no one has forfeited, record score
 		await message.channel.send(victoryMessage + '/ %s - 0 / ' %(12-count) + winner + ' wins' )	
 
+async def mhweak(monster, message):
+	monster.replace(" ","+")
+	mhwiki = requests.get('https://monsterhunterworld.wiki.fextralife.com/' + monster)
+
+	if mhwiki.status_code == 404:
+		await message.channel.send('Invalid Entry!')
+		return
+	else: #past the error check stage
+		mhsoup = bs4.BeautifulSoup(mhwiki.content, 'html.parser')
+		index1 = mhsoup.get_text().find('Weakness')
+		index2 = mhsoup.get_text()[index1:].find('Resistances')
+		weakMsg = mhsoup.get_text()[index1:][:index2].replace("\xa0"," ").replace("\n"," ")
+		await message.channel.send('**Weakness**' + weakMsg[8:])
 
 @client.event
 async def on_ready():
@@ -52,12 +65,14 @@ async def on_message(message):
 		soup = bs4.BeautifulSoup(page.content, 'html.parser')
 		await replayWinner(soup, message)
 	elif message.content.startswith('$server'):
-		page = requests.get('INSERT LINK HERE')
-		if page.status_code == 200
+		page = requests.get('insert server link here')
+		if page.status_code == 200:
 			await message.channel.send('Server is online!')
-			await message.channel.send('INSERT LINK HERE')
+			await message.channel.send('insert server link here')
 		else:
 			await message.channel.send('Server is not online')
+	elif message.content.startswith('$mhweak'):
+		monster = message.content[8:]
+		await mhweak(monster, message)
 		
-		
-client.run('INSERT DISCORD BOT KEY HERE')
+client.run('insert discord key here')
