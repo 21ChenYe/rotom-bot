@@ -32,17 +32,41 @@ async def replayWinner(soup, message): #returns the winner of a pokemon showdown
 
 async def mhweak(monster, message):
 	monster.replace(" ","+")
-	mhwiki = requests.get('https://monsterhunterworld.wiki.fextralife.com/' + monster)
+	wikiLink = 'https://monsterhunterworld.wiki.fextralife.com/'
+	mhwiki = requests.get(wikiLink + monster)
 
 	if mhwiki.status_code == 404:
 		await message.channel.send('Invalid Entry!')
 		return
 	else: #past the error check stage
 		mhsoup = bs4.BeautifulSoup(mhwiki.content, 'html.parser')
+		table = mhsoup.findAll('table')[0]
+		image = table.findAll('img')[0]
 		index1 = mhsoup.get_text().find('Weakness')
 		index2 = mhsoup.get_text()[index1:].find('Resistances')
-		weakMsg = mhsoup.get_text()[index1:][:index2].replace("\xa0"," ").replace("\n"," ")
-		await message.channel.send('**Weakness**' + weakMsg[8:])
+		weakMsg = mhsoup.get_text()[index1:][:index2].replace("\xa0"," ").replace("\n"," ").replace("(","").replace(")","");
+		rindex = mhsoup.get_text()[index1+index2+12:].find('\n')
+		resistMsg = mhsoup.get_text()[index1+index2+12:][:rindex]
+		#find a thumbnail	
+		try:
+			imageLink = wikiLink + image['data-src']
+		except:
+			imageLink = wikiLink + image['src']
+
+		speciesIndex1 = mhsoup.get_text().find('Species') + 8
+		speciesIndex2 = mhsoup.get_text()[speciesIndex1:].find('\n')
+		species = mhsoup.get_text()[speciesIndex1:speciesIndex1+speciesIndex2]
+
+		embed=discord.Embed(title=monster.upper(), description=species, color=0x00ff1d)
+		embed.set_thumbnail(url=imageLink)
+		embed.add_field(name="Weakness", value=weakMsg[8:], inline=False)
+		embed.add_field(name="Resistance", value=resistMsg, inline=False)
+
+		temper = mhsoup.get_text().find('Tempered L')
+		embed.set_footer(text=mhsoup.get_text()[temper:][:14].replace("\n"," "))
+		
+		
+		await message.channel.send(embed=embed)
 
 @client.event
 async def on_ready():
@@ -65,14 +89,14 @@ async def on_message(message):
 		soup = bs4.BeautifulSoup(page.content, 'html.parser')
 		await replayWinner(soup, message)
 	elif message.content.startswith('$server'):
-		page = requests.get('insert server link here')
+		page = requests.get('') #insert server link here
 		if page.status_code == 200:
 			await message.channel.send('Server is online!')
-			await message.channel.send('insert server link here')
+			await message.channel.send('') #insert server link here
 		else:
 			await message.channel.send('Server is not online')
 	elif message.content.startswith('$mhweak'):
 		monster = message.content[8:]
 		await mhweak(monster, message)
 		
-client.run('insert discord key here')
+client.run('') #insert key here
