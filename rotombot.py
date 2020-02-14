@@ -7,7 +7,10 @@ import bs4, requests, time
 
 logging.basicConfig(level = logging.INFO)
 client = discord.Client()
-
+fileKey = open("key.txt", 'r')
+key = fileKey.readline()
+server = fileKey.readline()
+fileKey.close()
 async def replayWinner(soup, message): #returns the winner of a pokemon showdown replay
 	#finds string of winner
 	indexWin = soup.get_text().find('|win|') 
@@ -41,30 +44,46 @@ async def mhweak(monster, message):
 	else: #past the error check stage
 		mhsoup = bs4.BeautifulSoup(mhwiki.content, 'html.parser')
 		table = mhsoup.findAll('table')[0]
+		#Table Stringing Logic: Find indexes
+		tableText = table.getText().replace('\n', ' ').replace('\xa0', ' ') #remove extraneous
+		indexSpecies = tableText.find('Species') #can be -1
+		indexElements = tableText.find('Elements') 
+		indexAilments = tableText.find('Ailments')
+		indexWeakness = tableText.find('Weakness') #account for spelling
+		indexWeakEnd = tableText[indexWeakness:].find(' ')
+		indexResistances = tableText.find('Resistances')
+		indexLocations = tableText.find('Location') #account for spelling
+		indexLocEnd = tableText[indexLocations:].find(' ')
+		indexTempered = tableText.find('Tempered') #can be -1
+
+		#use indexes to form messages
+		if indexSpecies != -1:
+			species = tableText[indexSpecies + 8: indexElements]
+		else:
+			species = '';
+
+		elements = tableText[indexElements + 9: indexAilments]
+		ailments = tableText[indexAilments + 9: indexWeakness]
+		weakness = tableText[indexWeakness + indexWeakEnd: indexResistances]
+		resistance = tableText[indexResistances + 12: indexLocations]
+		locations = tableText[indexLocations + indexLocEnd: indexTempered]
+
 		image = table.findAll('img')[0]
-		index1 = mhsoup.get_text().find('Weakness')
-		index2 = mhsoup.get_text()[index1:].find('Resistances')
-		weakMsg = mhsoup.get_text()[index1:][:index2].replace("\xa0"," ").replace("\n"," ").replace("(","").replace(")","");
-		rindex = mhsoup.get_text()[index1+index2+12:].find('\n')
-		resistMsg = mhsoup.get_text()[index1+index2+12:][:rindex]
 		#find a thumbnail	
 		try:
 			imageLink = wikiLink + image['data-src']
 		except:
 			imageLink = wikiLink + image['src']
-
-		speciesIndex1 = mhsoup.get_text().find('Species') + 8
-		speciesIndex2 = mhsoup.get_text()[speciesIndex1:].find('\n')
-		species = mhsoup.get_text()[speciesIndex1:speciesIndex1+speciesIndex2]
-
+			
 		embed=discord.Embed(title=monster.upper(), description=species, color=0x00ff1d)
 		embed.set_thumbnail(url=imageLink)
-		embed.add_field(name="Weakness", value=weakMsg[8:], inline=False)
-		embed.add_field(name="Resistance", value=resistMsg, inline=False)
 
-		temper = mhsoup.get_text().find('Tempered L')
-		embed.set_footer(text=mhsoup.get_text()[temper:][:14].replace("\n"," "))
-		
+		embed.add_field(name="Elements", value=elements, inline=False)
+		embed.add_field(name="Ailments", value=ailments, inline=False)
+		embed.add_field(name="Weakness", value=weakness, inline=False)
+		embed.add_field(name="Resistance", value=resistance, inline=False)
+		embed.add_field(name="Locale", value=locations, inline=False)
+		embed.set_footer(text=tableText[indexTempered:])
 		
 		await message.channel.send(embed=embed)
 
@@ -89,14 +108,14 @@ async def on_message(message):
 		soup = bs4.BeautifulSoup(page.content, 'html.parser')
 		await replayWinner(soup, message)
 	elif message.content.startswith('$server'):
-		page = requests.get('') #insert server link here
+		page = requests.get(server)
 		if page.status_code == 200:
 			await message.channel.send('Server is online!')
-			await message.channel.send('') #insert server link here
+			await message.channel.send(server)
 		else:
 			await message.channel.send('Server is not online')
-	elif message.content.startswith('$mhweak'):
-		monster = message.content[8:]
+	elif message.content.startswith('$mhbio'):
+		monster = message.content[7:]
 		await mhweak(monster, message)
-		
-client.run('') #insert key here
+
+client.run(key.replace('\n',''))
