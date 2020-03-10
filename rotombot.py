@@ -37,6 +37,7 @@ async def mhweak(monster, message):
 	monster.replace(" ","+")
 	wikiLink = 'https://monsterhunterworld.wiki.fextralife.com/'
 	mhwiki = requests.get(wikiLink + monster)
+	
 
 	if mhwiki.status_code == 404:
 		await message.channel.send('Invalid Entry!')
@@ -62,10 +63,18 @@ async def mhweak(monster, message):
 		else:
 			species = '';
 
+		embed=discord.Embed(title=monster.upper(), description=species, color=0x00ff1d)
+
 		elements = tableText[indexElements + 9: indexAilments]
 		ailments = tableText[indexAilments + 9: indexWeakness]
-		weakness = tableText[indexWeakness + indexWeakEnd: indexResistances]
-		resistance = tableText[indexResistances + 12: indexLocations]
+		if indexResistances != -1:
+			weakness = tableText[indexWeakness + indexWeakEnd: indexResistances]
+			resistance = tableText[indexResistances + 12: indexLocations]
+			embed.add_field(name="Resistance", value=resistance, inline=False)
+		else:
+			weakness = tableText[indexWeakness + indexWeakEnd: indexLocations]
+		
+		
 		locations = tableText[indexLocations + indexLocEnd: indexTempered]
 
 		image = table.findAll('img')[0]
@@ -75,13 +84,12 @@ async def mhweak(monster, message):
 		except:
 			imageLink = wikiLink + image['src']
 			
-		embed=discord.Embed(title=monster.upper(), description=species, color=0x00ff1d)
+		
 		embed.set_thumbnail(url=imageLink)
 
 		embed.add_field(name="Elements", value=elements, inline=False)
 		embed.add_field(name="Ailments", value=ailments, inline=False)
 		embed.add_field(name="Weakness", value=weakness, inline=False)
-		embed.add_field(name="Resistance", value=resistance, inline=False)
 		embed.add_field(name="Locale", value=locations, inline=False)
 		embed.set_footer(text=tableText[indexTempered:])
 		
