@@ -1,9 +1,10 @@
 #! usr/bin/python3
 
-import discord, logging
+import discord, logging, random
 from discord.utils import get
 import bs4, requests, time
 
+random.seed(time.time())
 
 logging.basicConfig(level = logging.INFO)
 client = discord.Client()
@@ -110,11 +111,14 @@ async def on_message(message):
 		role = get(message.guild.roles, name= message.content[10:])
 		for members in role.members:
 			await message.channel.send(members.display_name)
+
 	#checks for pokemon showdown replay and returns conclusion of battle
 	elif message.content.find('replay.pokemonshowdown') > 1:
 		page = requests.get(message.content)
 		soup = bs4.BeautifulSoup(page.content, 'html.parser')
 		await replayWinner(soup, message)
+
+	#checks custom PS server
 	elif message.content.startswith('$server'):
 		page = requests.get(server)
 		if page.status_code == 200:
@@ -122,8 +126,24 @@ async def on_message(message):
 			await message.channel.send(server)
 		else:
 			await message.channel.send('Server is not online')
+
+	#basically returns monster hunter information on specific monsters
 	elif message.content.startswith('$mhbio'):
 		monster = message.content[7:]
 		await mhweak(monster, message)
-
+	elif message.content.startswith('$coinflip'):
+		flip = random.randint(1, 2)
+		if flip == 1:
+			await message.channel.send('Heads');
+		elif flip == 2:
+			await message.channel.send('Tails');
+	#dice roll 1 through 6
+	elif message.content.startswith('$roll6'):
+		roll = random.randint(1, 6)
+		await message.channel.send('Dice roll is {}'.format(roll))
+	#same same... but different ya know?
+	elif message.content.startswith('$roll20'):
+		roll = random.randint(1, 20)
+		await message.channel.send('Dice roll is {}'.format(roll))
+		
 client.run(key.replace('\n',''))
